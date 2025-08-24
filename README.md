@@ -1,5 +1,8 @@
 # UE Offset Finder
 
+> [!IMPORTANT]
+> ⚠️ This repository is under heavy development. Structure and other stuff may change daily.
+
 Modular tool for finding Unreal Engine offsets and exporting them to JSON format. **Works as a DLL injectable into the game.**
 
 ## Features

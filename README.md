@@ -1,84 +1,84 @@
 # UE Offset Finder
 
-Модульный инструмент для поиска оффсетов Unreal Engine и экспорта их в JSON формат. **Работает как DLL, инжектируемый в игру.**
+Modular tool for finding Unreal Engine offsets and exporting them to JSON format. **Works as a DLL injectable into the game.**
 
-## Возможности
+## Features
 
-- **Поиск GNames** - через сигнатуры и строки
-- **Поиск GObjects** - через сигнатуры и строки  
-- **Поиск GWorld** - через сигнатуры и строки
-- **Поиск ProcessEvent** - через строки и анализ кода
-- **Поиск FName::AppendString** - через сигнатуры и строки
-- **Поиск CreateDefaultObject** - через строки и анализ кода
-- **Экспорт в JSON** - структурированный вывод результатов
+- **GNames Search** - via signatures and strings
+- **GObjects Search** - via signatures and strings  
+- **GWorld Search** - via signatures and strings
+- **ProcessEvent Search** - via strings and code analysis
+- **FName::AppendString Search** - via signatures and strings
+- **CreateDefaultObject Search** - via strings and code analysis
+- **JSON Export** - structured output of results
 
-## Архитектура
+## Architecture
 
 ```
 src/
 ├── lib.rs              # DLL entry point
-├── logging.rs          # Система логирования
+├── logging.rs          # Logging system
 └── offsets/
-    ├── mod.rs          # Модуль оффсетов
-    └── offset_finder.rs # Основная логика поиска
+    ├── mod.rs          # Offsets module
+    └── offset_finder.rs # Main search logic
 ```
 
-**Ключевая особенность**: DLL работает **внутри** целевого процесса, используя прямое чтение памяти без Windows API.
+**Key feature**: DLL works **inside** the target process, using direct memory reading without Windows API.
 
-## Использование
+## Usage
 
-### 1. Сборка
+### 1. Build
 
 ```bash
 cargo build --release
 ```
 
-### 2. Инъекция в процесс
+### 2. Inject into process
 
 ```bash
-# Инжектируйте DLL в процесс UE игры
-# (используйте любой инжектор DLL)
+# Inject DLL into UE game process
+# (use any DLL injector)
 ```
 
-### 3. Автоматический поиск
+### 3. Automatic search
 
-После инъекции DLL автоматически:
-1. Определит базовый адрес модуля
-2. Найдет все доступные оффсеты
-3. Экспортирует результаты в JSON файл
-4. Выведет информацию в консоль
+After injection, DLL automatically:
+1. Determines module base address
+2. Finds all available offsets
+3. Exports results to JSON file
+4. Outputs information to console
 
-## Алгоритмы поиска
+## Search algorithms
 
 ### GNames
-- **Сигнатура**: `48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? C6 05 ?? ?? ?? ?? ?? 8B 50`
-- **Строка**: `%d.%d.%d.%d.%d.%s`
-- **Анализ**: Поиск выше по коду `mov rax, cs:qword ptr [...]`
+- **Signature**: `48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? C6 05 ?? ?? ?? ?? ?? 8B 50`
+- **String**: `%d.%d.%d.%d.%d.%s`
+- **Analysis**: Search above in code for `mov rax, cs:qword ptr [...]`
 
 ### GObjects  
-- **Сигнатура**: `48 8B 05 ?? ?? ?? ?? 48 8B 0C C8 48 8D 04 D1 48 85 C0`
-- **Строка**: `Invalid object index in reference chain`
-- **Анализ**: Поиск выше по коду `mov rax, cs:qword ptr [...]`
+- **Signature**: `48 8B 05 ?? ?? ?? ?? 48 8B 0C C8 48 8D 04 D1 48 85 C0`
+- **String**: `Invalid object index in reference chain`
+- **Analysis**: Search above in code for `mov rax, cs:qword ptr [...]`
 
 ### GWorld
-- **Сигнатура**: `48 89 15 ?? ?? ?? ?? 8B DA`
-- **Строка**: `SeamlessTravel FlushLevelStreaming`
-- **Анализ**: Поиск выше по коду `mov cs:qword ptr [...], rax`
+- **Signature**: `48 89 15 ?? ?? ?? ?? 8B DA`
+- **String**: `SeamlessTravel FlushLevelStreaming`
+- **Analysis**: Search above in code for `mov cs:qword ptr [...], rax`
 
 ### ProcessEvent
-- **Строка**: `Bad or missing property` или `AccessNoneNoContext`
-- **Анализ**: Поиск выше по коду `call qword ptr [rax+138h]`
+- **String**: `Bad or missing property` or `AccessNoneNoContext`
+- **Analysis**: Search above in code for `call qword ptr [rax+138h]`
 
 ### FName::AppendString
-- **Сигнатура**: `48 89 5C 24 ?? 56 48 83 EC ?? 80 3D ?? ?? ?? ?? ?? 48 8B DA`
-- **Строка**: `Skeleton`
-- **Анализ**: Поиск выше по коду начала функции
+- **Signature**: `48 89 5C 24 ?? 56 48 83 EC ?? 80 3D ?? ?? ?? ?? ?? 48 8B DA`
+- **String**: `Skeleton`
+- **Analysis**: Search above in code for function start
 
 ### CreateDefaultObject
-- **Строка**: `CanvasRenderTarget2DCanvas`
-- **Анализ**: Поиск выше по коду начала функции
+- **String**: `CanvasRenderTarget2DCanvas`
+- **Analysis**: Search above in code for function start
 
-## Формат JSON
+## JSON Format
 
 ```json
 {
@@ -93,35 +93,35 @@ cargo build --release
 }
 ```
 
-## Тестирование
+## Testing
 
 ```bash
 cargo test
 ```
 
-Тесты покрывают:
-- Создание структуры оффсетов
-- Поиск паттернов в буферах
-- Экспорт в JSON
-- Обработку ошибок
+Tests cover:
+- Creating offset structure
+- Pattern search in buffers
+- JSON export
+- Error handling
 
-## Требования
+## Requirements
 
 - Windows 10/11
 - Rust 1.70+
-- Целевой процесс должен быть доступен для инъекции DLL
-- Права администратора для инъекции DLL
+- Target process must be accessible for DLL injection
+- Administrator rights for DLL injection
 
-## Безопасность
+## Security
 
-- **НЕ использует Windows API** для чтения памяти
-- **Прямой доступ** к памяти текущего процесса
-- **Автоматическое определение** базового адреса модуля
-- Graceful degradation при ошибках
+- **Does NOT use Windows API** for memory reading
+- **Direct access** to current process memory
+- **Automatic detection** of module base address
+- Graceful degradation on errors
 
-## Технические детали
+## Technical details
 
-### Прямое чтение памяти
+### Direct memory reading
 ```rust
 fn read_memory<T>(&self, address: u64) -> Result<T, Box<dyn std::error::Error>> {
     let ptr = address as *const T;
@@ -130,10 +130,10 @@ fn read_memory<T>(&self, address: u64) -> Result<T, Box<dyn std::error::Error>> 
 }
 ```
 
-### Определение базового адреса
+### Base address determination
 ```rust
 fn get_module_base() -> u64 {
-    // Получаем из PEB (Process Environment Block)
+    // Get from PEB (Process Environment Block)
     unsafe {
         let peb = std::ptr::read_volatile(0x60 as *const u64);
         let ldr = std::ptr::read_volatile((peb + 0x18) as *const u64);
@@ -144,15 +144,15 @@ fn get_module_base() -> u64 {
 }
 ```
 
-## Расширение
+## Extension
 
-Для добавления новых оффсетов:
+To add new offsets:
 
-1. Добавьте поле в структуру `UEOffsets`
-2. Реализуйте метод поиска в `OffsetFinder`
-3. Добавьте вызов в `find_all_offsets()`
-4. Напишите тесты
+1. Add field to `UEOffsets` structure
+2. Implement search method in `OffsetFinder`
+3. Add call to `find_all_offsets()`
+4. Write tests
 
-## Лицензия
+## License
 
 MIT License

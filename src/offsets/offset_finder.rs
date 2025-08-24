@@ -289,7 +289,6 @@ impl OffsetFinder {
             }
         }
         
-        // Поиск через сигнатуры доступа к GObjects
         let signatures = [
             (vec![0x48, 0x8B, 0x05, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8B, 0x0C, 0xC8], "xxx????xxx"),
             (vec![0x48, 0x8B, 0x0D, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8B, 0x04, 0xC8], "xxx????xxx"),
@@ -308,9 +307,7 @@ impl OffsetFinder {
         Err("GObjects not found".into())
     }
 
-    // Поиск GObjects через .data секцию (методика @Engine/)
     fn find_gobjects_via_data_section(&self) -> Option<u64> {
-        // Сканируем .data секцию модуля
         let mut current_address = self.module_base;
         let max_address = self.module_base + 0x10000000; // 256MB
         

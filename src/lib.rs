@@ -15,17 +15,13 @@ use offsets::offset_finder::{OffsetFinder, export_offsets_to_json};
 fn dumper_thread() {
     info!("\n\nUE Dumper thread started.\n\n");
     
-    // Обработка паники для предотвращения краша игры
     let result = std::panic::catch_unwind(|| {
-        // Создаем поисковик оффсетов для текущего процесса
         let mut finder = OffsetFinder::new();
         info!("Offset finder initialized for current process");
         
-        // Поиск всех оффсетов
         let offsets = finder.find_all_offsets();
         info!("Found offsets: {:?}", offsets);
         
-        // Экспорт в JSON
         let filename = format!("ue_offsets_{}.json", chrono::Utc::now().timestamp());
         if let Err(e) = export_offsets_to_json(&offsets, &filename) {
             error!("Failed to export offsets: {}", e);
@@ -57,7 +53,6 @@ pub unsafe extern "system" fn DllMain(
 
             info!("\n\nUE Dumper injected successfully!\n\n");
             
-            // Запуск дампера в отдельном потоке
             std::thread::spawn(|| {
                 dumper_thread();
             });

@@ -4,18 +4,46 @@ use windows_sys::Win32::{
         LibraryLoader::DisableThreadLibraryCalls,
         SystemServices::{DLL_PROCESS_ATTACH, DLL_PROCESS_DETACH},
         Console::{AllocConsole, FreeConsole},
-        Threading::CreateThread,
     },
 };
 
 mod logging;
-use log::info;
+mod offsets;
+use log::{info, error};
+use offsets::offset_finder::{OffsetFinder, export_offsets_to_json};
 
 fn dumper_thread() {
     info!("\n\nUE Dumper thread started.\n\n");
+    
+    // Обработка паники для предотвращения краша игры
+    let result = std::panic::catch_unwind(|| {
+        // Создаем поисковик оффсетов для текущего процесса
+        let mut finder = OffsetFinder::new();
+        info!("Offset finder initialized for current process");
+        
+        // Поиск всех оффсетов
+        let offsets = finder.find_all_offsets();
+        info!("Found offsets: {:?}", offsets);
+        
+        // Экспорт в JSON
+        let filename = format!("ue_offsets_{}.json", chrono::Utc::now().timestamp());
+        if let Err(e) = export_offsets_to_json(&offsets, &filename) {
+            error!("Failed to export offsets: {}", e);
+        } else {
+            info!("Offsets successfully exported to: {}", filename);
+        }
+    });
+    
+    match result {
+        Ok(_) => info!("Offset finding completed successfully"),
+        Err(e) => {
+            error!("Offset finding failed with panic: {:?}", e);
+            error!("Game should continue running normally");
+        }
+    }
 }
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub unsafe extern "system" fn DllMain(
     h_module: HMODULE,
     reason: u32,
@@ -30,7 +58,6 @@ pub unsafe extern "system" fn DllMain(
             info!("\n\nUE Dumper injected successfully!\n\n");
             
             // Запуск дампера в отдельном потоке
-            let mut thread_id = 0u32;
             std::thread::spawn(|| {
                 dumper_thread();
             });
